@@ -3,9 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de notas</title>
+  <title>Simulador de Notas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    form, .output {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 5px;
+    }
+    .output {
+      background: #f9f9f9;
+    }
+  </style>
 </head>
 <body>
-  <script src=".//js/main.js"></script>
+  <div class="container">
+    <h1>Simulador de Notas</h1>
+
+    <form id="formAgregar">
+      <h2>Agregar Calificación</h2>
+      <label>
+        Nombre:
+        <input type="text" id="nombre" required>
+      </label>
+      <br>
+      <label>
+        Apellido:
+        <input type="text" id="apellido" required>
+      </label>
+      <br>
+      <label>
+        Calificación:
+        <input type="number" id="nota" min="0" max="100" required>
+      </label>
+      <br><br>
+      <button type="submit">Agregar</button>
+    </form>
+
+    <div class="output">
+      <h2>Resultados</h2>
+      <button id="btnMostrar">Mostrar Calificaciones</button>
+      <button id="btnFiltrar">Filtrar Calificaciones Altas</button>
+      <button id="btnBuscar">Buscar Calificación</button>
+      <button id="btnBorrar">Borrar Datos</button>
+      <div id="resultados"></div>
+    </div>
+  </div>
+  <script src="./js/main.js"></script>
 </body>
 </html>

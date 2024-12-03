@@ -1,98 +1,85 @@
-const calificaciones = [];
+const calificaciones = JSON.parse(localStorage.getItem("calificaciones")) || [];
 
-function agregarCalificacion() {
-  const nombre = prompt("Ingresa el nombre del estudiante:");
-  const apellido = prompt("Ingresa el apellido del estudiante:");
-  const nota = prompt("Ingresa la calificación de " + nombre + " " + apellido + " (0-100):");
-  const notaNumero = parseFloat(nota);
+function actualizarStorage() {
+  localStorage.setItem("calificaciones", JSON.stringify(calificaciones));
+}
 
-  if (notaNumero >= 0 && notaNumero <= 100 && !isNaN(notaNumero)) {
-    const calificacion = {
-      nombre: nombre,
-      apellido: apellido,
-      nota: notaNumero
-    };
-    calificaciones.push(calificacion);
-    alert("¡Calificación de " + nombre + " " + apellido + " agregada con éxito!");
+function agregarCalificacion(e) {
+  e.preventDefault();
+  const nombre = document.getElementById("nombre").value;
+  const apellido = document.getElementById("apellido").value;
+  const nota = parseFloat(document.getElementById("nota").value);
+
+  if (!isNaN(nota) && nota >= 0 && nota <= 100) {
+    calificaciones.push({ nombre, apellido, nota });
+    actualizarStorage();
+    mostrarMensaje(`Calificación de ${nombre} ${apellido} agregada con éxito.`, "success");
+    e.target.reset();
   } else {
-    alert("Por favor, ingresa una calificación válida entre 0 y 100.");
+    mostrarMensaje("Por favor ingresa una calificación válida entre 0 y 100.", "error");
   }
 }
 
 function mostrarCalificaciones() {
+  const resultados = document.getElementById("resultados");
+  resultados.innerHTML = "<h3>Calificaciones:</h3>";
   if (calificaciones.length === 0) {
-    alert("No se han cargado calificaciones aún.");
+    resultados.innerHTML += "<p>No hay calificaciones registradas.</p>";
   } else {
-    let listaCalificaciones = "";
-    for (let i = 0; i < calificaciones.length; i++) {
-      const calificacion = calificaciones[i];
-      listaCalificaciones += calificacion.nombre + " " + calificacion.apellido + ": " + calificacion.nota + "\n";
-    }
-    alert("Las calificaciones registradas son:\n" + listaCalificaciones);
+    const lista = calificaciones
+      .map(c => `<p>${c.nombre} ${c.apellido}: ${c.nota}</p>`)
+      .join("");
+    resultados.innerHTML += lista;
   }
 }
 
 function buscarCalificacion() {
-  const nombreBuscar = prompt("Ingresa el nombre del estudiante que querés buscar:");
-  const apellidoBuscar = prompt("Ingresa el apellido del estudiante:");
-  let encontrado = false;
+  const nombreBuscar = prompt("Ingresa el nombre:");
+  const apellidoBuscar = prompt("Ingresa el apellido:");
+  const encontrado = calificaciones.find(
+    c => c.nombre.toLowerCase() === nombreBuscar.toLowerCase() &&
+         c.apellido.toLowerCase() === apellidoBuscar.toLowerCase()
+  );
 
-  for (let i = 0; i < calificaciones.length; i++) {
-    const calificacion = calificaciones[i];
-    if (calificacion.nombre.toLowerCase() === nombreBuscar.toLowerCase() &&
-        calificacion.apellido.toLowerCase() === apellidoBuscar.toLowerCase()) {
-      alert("La calificación de " + nombreBuscar + " " + apellidoBuscar + " es: " + calificacion.nota);
-      encontrado = true;
-      break;
-    }
-  }
-
-  if (!encontrado) {
-    alert("No encontramos a " + nombreBuscar + " " + apellidoBuscar + ".");
+  const resultados = document.getElementById("resultados");
+  if (encontrado) {
+    resultados.innerHTML = `<p>La calificación de ${encontrado.nombre} ${encontrado.apellido} es ${encontrado.nota}.</p>`;
+  } else {
+    resultados.innerHTML = "<p>No se encontró al estudiante.</p>";
   }
 }
 
 function filtrarCalificacionesAltas() {
-  const maximo = prompt("Ingresa el valor maximo para filtrar las calificaciones altas (0-100):");
-  const maximoNumero = parseFloat(maximo);
+  const maximo = parseFloat(prompt("Ingresa el valor máximo para filtrar:"));
+  const resultados = document.getElementById("resultados");
 
-  if (!isNaN(maximoNumero) && maximoNumero >= 0 && maximoNumero <= 100) {
-    let calificacionesAltas = "";
-    for (let i = 0; i < calificaciones.length; i++) {
-      const calificacion = calificaciones[i];
-      if (calificacion.nota > maximoNumero) {
-        calificacionesAltas += calificacion.nombre + " " + calificacion.apellido + ": " + calificacion.nota + "\n";
-      }
-    }
-
-    if (calificacionesAltas !== "") {
-      alert("Las calificaciones mayores a " + maximoNumero + " son:\n" + calificacionesAltas);
+  if (!isNaN(maximo) && maximo >= 0 && maximo <= 100) {
+    const altas = calificaciones.filter(c => c.nota > maximo);
+    if (altas.length > 0) {
+      resultados.innerHTML = altas
+        .map(c => `<p>${c.nombre} ${c.apellido}: ${c.nota}</p>`)
+        .join("");
     } else {
-      alert("No hay calificaciones mayores a " + maximoNumero + ".");
+      resultados.innerHTML = "<p>No hay calificaciones mayores al valor dado.</p>";
     }
   } else {
-    alert("Por favor, ingresa un numero válido entre 0 y 100.");
+    mostrarMensaje("Por favor ingresa un número válido entre 0 y 100.", "error");
   }
 }
 
-function ejecutarPrograma() {
-  alert("¡Bienvenido al simulador de calificaciones!");
-  let continuar = true;
-  while (continuar) {
-    const opcion = prompt("¿Qué querés hacer?\n1. Agregar calificación\n2. Mostrar calificaciones\n3. Buscar calificación por nombre\n4. Filtrar calificaciones altas\n5. Salir");
-
-    if (opcion === "1") {
-      agregarCalificacion();
-    } else if (opcion === "2") {
-      mostrarCalificaciones();
-    } else if (opcion === "3") {
-      buscarCalificacion();
-    } else if (opcion === "4") {
-      filtrarCalificacionesAltas();
-    } else if (opcion === "5") {
-      continuar = false;
-    }
-  }
+function borrarDatos() {
+  localStorage.clear();
+  calificaciones.length = 0;
+  mostrarMensaje("Se han borrado todas las calificaciones.", "success");
 }
 
-ejecutarPrograma();
+function mostrarMensaje(mensaje, tipo) {
+  const resultados = document.getElementById("resultados");
+  resultados.innerHTML = `<p class="${tipo}">${mensaje}</p>`;
+}
+
+document.getElementById("formAgregar").addEventListener("submit", agregarCalificacion);
+document.getElementById("btnMostrar").addEventListener("click", mostrarCalificaciones);
+document.getElementById("btnFiltrar").addEventListener("click", filtrarCalificacionesAltas);
+document.getElementById("btnBuscar").addEventListener("click", buscarCalificacion);
+document.getElementById("btnBorrar").addEventListener("click", borrarDatos);
