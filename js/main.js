@@ -1,85 +1,122 @@
-const calificaciones = JSON.parse(localStorage.getItem("calificaciones")) || [];
 
-function actualizarStorage() {
-  localStorage.setItem("calificaciones", JSON.stringify(calificaciones));
+function mostrarCalificaciones() {
+  fetch('http://localhost:3000/calificaciones')
+    .then(response => response.json())
+    .then(data => {
+      const resultados = document.getElementById('resultados');
+      resultados.innerHTML = '<h3>Calificaciones:</h3>';
+
+      if (data.length === 0) {
+        resultados.innerHTML += '<p>No hay calificaciones registradas.</p>';
+      } else {
+        const lista = document.createElement('ul');
+        data.forEach(c => {
+          const item = document.createElement('li');
+          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
+          lista.appendChild(item);
+        });
+        resultados.appendChild(lista);
+      }
+    })
+    .catch(error => console.error('Error al obtener calificaciones:', error));
 }
 
 function agregarCalificacion(e) {
   e.preventDefault();
-  const nombre = document.getElementById("nombre").value;
-  const apellido = document.getElementById("apellido").value;
-  const nota = parseFloat(document.getElementById("nota").value);
+  const nombre = document.getElementById('nombre').value;
+  const apellido = document.getElementById('apellido').value;
+  const nota = parseFloat(document.getElementById('nota').value);
 
-  if (!isNaN(nota) && nota >= 0 && nota <= 100) {
-    calificaciones.push({ nombre, apellido, nota });
-    actualizarStorage();
-    mostrarMensaje(`Calificación de ${nombre} ${apellido} agregada con éxito.`, "success");
-    e.target.reset();
+  if (!isNaN(nota) && nota >= 1 && nota <= 100) {
+    const nuevaCalificacion = { nombre, apellido, nota };
+
+    fetch('http://localhost:3000/calificaciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevaCalificacion),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data.message);
+        mostrarCalificaciones();
+        
+        document.getElementById('nombre').value = '';
+        document.getElementById('apellido').value = '';
+        document.getElementById('nota').value = '';
+      })
+      .catch(error => console.error('Error al agregar calificación:', error));
   } else {
-    mostrarMensaje("Por favor ingresa una calificación válida entre 0 y 100.", "error");
-  }
-}
-
-function mostrarCalificaciones() {
-  const resultados = document.getElementById("resultados");
-  resultados.innerHTML = "<h3>Calificaciones:</h3>";
-  if (calificaciones.length === 0) {
-    resultados.innerHTML += "<p>No hay calificaciones registradas.</p>";
-  } else {
-    const lista = calificaciones
-      .map(c => `<p>${c.nombre} ${c.apellido}: ${c.nota}</p>`)
-      .join("");
-    resultados.innerHTML += lista;
-  }
-}
-
-function buscarCalificacion() {
-  const nombreBuscar = prompt("Ingresa el nombre:");
-  const apellidoBuscar = prompt("Ingresa el apellido:");
-  const encontrado = calificaciones.find(
-    c => c.nombre.toLowerCase() === nombreBuscar.toLowerCase() &&
-         c.apellido.toLowerCase() === apellidoBuscar.toLowerCase()
-  );
-
-  const resultados = document.getElementById("resultados");
-  if (encontrado) {
-    resultados.innerHTML = `<p>La calificación de ${encontrado.nombre} ${encontrado.apellido} es ${encontrado.nota}.</p>`;
-  } else {
-    resultados.innerHTML = "<p>No se encontró al estudiante.</p>";
-  }
-}
-
-function filtrarCalificacionesAltas() {
-  const maximo = parseFloat(prompt("Ingresa el valor máximo para filtrar:"));
-  const resultados = document.getElementById("resultados");
-
-  if (!isNaN(maximo) && maximo >= 0 && maximo <= 100) {
-    const altas = calificaciones.filter(c => c.nota > maximo);
-    if (altas.length > 0) {
-      resultados.innerHTML = altas
-        .map(c => `<p>${c.nombre} ${c.apellido}: ${c.nota}</p>`)
-        .join("");
-    } else {
-      resultados.innerHTML = "<p>No hay calificaciones mayores al valor dado.</p>";
-    }
-  } else {
-    mostrarMensaje("Por favor ingresa un número válido entre 0 y 100.", "error");
+    alert('Por favor ingresa una calificación válida entre 1 y 100.');
   }
 }
 
 function borrarDatos() {
-  localStorage.clear();
-  calificaciones.length = 0;
-  mostrarMensaje("Se han borrado todas las calificaciones.", "success");
+  fetch('http://localhost:3000/calificaciones', {
+    method: 'DELETE',
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.message);
+      mostrarCalificaciones();
+    })
+    .catch(error => console.error('Error al borrar calificaciones:', error));
 }
 
-function mostrarMensaje(mensaje, tipo) {
-  const resultados = document.getElementById("resultados");
-  resultados.innerHTML = `<p class="${tipo}">${mensaje}</p>`;
+
+function filtrarCalificacionesAltas() {
+  fetch('http://localhost:3000/calificaciones')
+    .then(response => response.json())
+    .then(data => {
+      const resultados = document.getElementById('resultados');
+      resultados.innerHTML = '<h3>Calificaciones Altas (≥ 70):</h3>';
+
+      const altas = data.filter(c => c.nota >= 70);
+      
+      if (altas.length === 0) {
+        resultados.innerHTML += '<p>No hay calificaciones altas registradas.</p>';
+      } else {
+        const lista = document.createElement('ul');
+        altas.forEach(c => {
+          const item = document.createElement('li');
+          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
+          lista.appendChild(item);
+        });
+        resultados.appendChild(lista);
+      }
+    })
+    .catch(error => console.error('Error al filtrar calificaciones altas:', error));
 }
 
-document.getElementById("formAgregar").addEventListener("submit", agregarCalificacion);
-document.getElementById("btnMostrar").addEventListener("click", mostrarCalificaciones);
-document.getElementById("btnFiltrar").addEventListener("click", filtrarCalificacionesAltas);
-document.getElementById("btnBuscar").addEventListener("click", buscarCalificacion);
-document.getElementById("btnBorrar").addEventListener("click", borrarDatos);
+function buscarCalificacion() {
+  const nombreBuscado = prompt('Ingrese el nombre a buscar:');
+  if (!nombreBuscado) return;
+
+  fetch('http://localhost:3000/calificaciones')
+    .then(response => response.json())
+    .then(data => {
+      const resultados = document.getElementById('resultados');
+      const encontrado = data.filter(c => c.nombre.toLowerCase() === nombreBuscado.toLowerCase());
+
+      if (encontrado.length === 0) {
+        resultados.innerHTML = `<p>No se encontró ninguna calificación para "${nombreBuscado}".</p>`;
+      } else {
+        resultados.innerHTML = `<h3>Resultados para "${nombreBuscado}":</h3>`;
+        const lista = document.createElement('ul');
+        encontrado.forEach(c => {
+          const item = document.createElement('li');
+          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
+          lista.appendChild(item);
+        });
+        resultados.appendChild(lista);
+      }
+    })
+    .catch(error => console.error('Error al buscar calificaciones:', error));
+}
+
+document.getElementById('formAgregar').addEventListener('submit', agregarCalificacion);
+document.getElementById('btnMostrar').addEventListener('click', mostrarCalificaciones);
+document.getElementById('btnBorrar').addEventListener('click', borrarDatos);
+document.getElementById('btnFiltrar').addEventListener('click', filtrarCalificacionesAltas);
+document.getElementById('btnBuscar').addEventListener('click', buscarCalificacion);
+
+mostrarCalificaciones();

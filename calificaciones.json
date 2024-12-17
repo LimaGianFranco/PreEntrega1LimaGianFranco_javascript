@@ -1,0 +1,17 @@
+[
+  {
+    "nombre": "franco",
+    "apellido": "lima",
+    "nota": 69
+  },
+  {
+    "nombre": "juan",
+    "apellido": "perez",
+    "nota": 70
+  },
+  {
+    "nombre": "ema",
+    "apellido": "alcara",
+    "nota": 71
+  }
+]
