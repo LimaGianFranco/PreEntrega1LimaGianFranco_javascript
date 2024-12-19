@@ -1,24 +1,20 @@
 
 function mostrarCalificaciones() {
-  fetch('http://localhost:3000/calificaciones')
-    .then(response => response.json())
-    .then(data => {
-      const resultados = document.getElementById('resultados');
-      resultados.innerHTML = '<h3>Calificaciones:</h3>';
+  const data = obtenerDeLocalStorage(); 
+  const resultados = document.getElementById('resultados');
+  resultados.innerHTML = '<h3>Calificaciones:</h3>';
 
-      if (data.length === 0) {
-        resultados.innerHTML += '<p>No hay calificaciones registradas.</p>';
-      } else {
-        const lista = document.createElement('ul');
-        data.forEach(c => {
-          const item = document.createElement('li');
-          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
-          lista.appendChild(item);
-        });
-        resultados.appendChild(lista);
-      }
-    })
-    .catch(error => console.error('Error al obtener calificaciones:', error));
+  if (data.length === 0) {
+    resultados.innerHTML += '<p> No hay calificaciones registradas.</p>';
+  } else {
+    const lista = document.createElement('ul');
+    data.forEach(c => {
+      const item = document.createElement('li');
+      item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
+      lista.appendChild(item);
+    });
+    resultados.appendChild(lista);
+  }
 }
 
 function agregarCalificacion(e) {
@@ -38,8 +34,9 @@ function agregarCalificacion(e) {
       .then(response => response.json())
       .then(data => {
         console.log(data.message);
+        guardarEnLocalStorage([...obtenerDeLocalStorage(), nuevaCalificacion]);
         mostrarCalificaciones();
-        
+
         document.getElementById('nombre').value = '';
         document.getElementById('apellido').value = '';
         document.getElementById('nota').value = '';
@@ -57,60 +54,70 @@ function borrarDatos() {
     .then(response => response.json())
     .then(data => {
       console.log(data.message);
+      guardarEnLocalStorage([]); 
       mostrarCalificaciones();
     })
     .catch(error => console.error('Error al borrar calificaciones:', error));
 }
 
-
 function filtrarCalificacionesAltas() {
-  fetch('http://localhost:3000/calificaciones')
-    .then(response => response.json())
-    .then(data => {
-      const resultados = document.getElementById('resultados');
-      resultados.innerHTML = '<h3>Calificaciones Altas (≥ 70):</h3>';
+  const data = obtenerDeLocalStorage(); 
+  const resultados = document.getElementById('resultados');
+  resultados.innerHTML = '<h3>Calificaciones Altas (≥ 70):</h3>';
 
-      const altas = data.filter(c => c.nota >= 70);
-      
-      if (altas.length === 0) {
-        resultados.innerHTML += '<p>No hay calificaciones altas registradas.</p>';
-      } else {
-        const lista = document.createElement('ul');
-        altas.forEach(c => {
-          const item = document.createElement('li');
-          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
-          lista.appendChild(item);
-        });
-        resultados.appendChild(lista);
-      }
-    })
-    .catch(error => console.error('Error al filtrar calificaciones altas:', error));
+  const altas = data.filter(c => c.nota >= 70);
+
+  if (altas.length === 0) {
+    resultados.innerHTML += '<p>No hay calificaciones altas registradas.</p>';
+  } else {
+    const lista = document.createElement('ul');
+    altas.forEach(c => {
+      const item = document.createElement('li');
+      item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
+      lista.appendChild(item);
+    });
+    resultados.appendChild(lista);
+  }
 }
 
 function buscarCalificacion() {
   const nombreBuscado = prompt('Ingrese el nombre a buscar:');
   if (!nombreBuscado) return;
 
+  const data = obtenerDeLocalStorage(); 
+  const resultados = document.getElementById('resultados');
+  const encontrado = data.filter(c => c.nombre.toLowerCase() === nombreBuscado.toLowerCase());
+
+  if (encontrado.length === 0) {
+    resultados.innerHTML = `<p>No se encontró ninguna calificación para "${nombreBuscado}".</p>`;
+  } else {
+    resultados.innerHTML = `<h3>Resultados para "${nombreBuscado}":</h3>`;
+    const lista = document.createElement('ul');
+    encontrado.forEach(c => {
+      const item = document.createElement('li');
+      item.textContent = `  ${c.nombre} ${c.apellido}: ${c.nota}`;
+      lista.appendChild(item);
+    });
+    resultados.appendChild(lista);
+  }
+}
+
+function guardarEnLocalStorage(data) {
+  localStorage.setItem('calificaciones', JSON.stringify(data));
+}
+
+function obtenerDeLocalStorage() {
+  return JSON.parse(localStorage.getItem('calificaciones') || '[]');
+}
+
+function sincronizarConServidor() {
   fetch('http://localhost:3000/calificaciones')
     .then(response => response.json())
     .then(data => {
-      const resultados = document.getElementById('resultados');
-      const encontrado = data.filter(c => c.nombre.toLowerCase() === nombreBuscado.toLowerCase());
-
-      if (encontrado.length === 0) {
-        resultados.innerHTML = `<p>No se encontró ninguna calificación para "${nombreBuscado}".</p>`;
-      } else {
-        resultados.innerHTML = `<h3>Resultados para "${nombreBuscado}":</h3>`;
-        const lista = document.createElement('ul');
-        encontrado.forEach(c => {
-          const item = document.createElement('li');
-          item.textContent = `${c.nombre} ${c.apellido}: ${c.nota}`;
-          lista.appendChild(item);
-        });
-        resultados.appendChild(lista);
-      }
+      guardarEnLocalStorage(data);
+      mostrarCalificaciones();
     })
-    .catch(error => console.error('Error al buscar calificaciones:', error));
+    .catch(error => console.error('Error al sincronizar con el servidor:', error));
 }
 
 document.getElementById('formAgregar').addEventListener('submit', agregarCalificacion);
@@ -119,4 +126,5 @@ document.getElementById('btnBorrar').addEventListener('click', borrarDatos);
 document.getElementById('btnFiltrar').addEventListener('click', filtrarCalificacionesAltas);
 document.getElementById('btnBuscar').addEventListener('click', buscarCalificacion);
 
-mostrarCalificaciones();
+sincronizarConServidor();
+
